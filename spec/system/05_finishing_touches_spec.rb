@@ -3,15 +3,19 @@ require 'rails_helper'
 describe '[STEP3] 仕上げのテスト' do
   let(:user) { create(:user) }
   let!(:other_user) { create(:user) }
-  let!(:book) { create(:book, user: user) }
-  let!(:other_book) { create(:book, user: other_user) }
+  let!(:review) { create(:review, user: user) }
+  let!(:other_review) { create(:review, user: other_user) }
 
   describe 'サクセスメッセージのテスト' do
     subject { page }
 
     it 'ユーザ新規登録成功時' do
       visit new_user_registration_path
-      fill_in 'user[name]', with: Faker::Lorem.characters(number: 9)
+      fill_in 'user[first_name]', with: Faker::Lorem.characters(number: 9)
+      fill_in 'user[last_name]', with: Faker::Lorem.characters(number: 9)
+      fill_in 'user[kana_first_name]', with: Faker::Lorem.characters(number: 9)
+      fill_in 'user[kana_last_name]', with: Faker::Lorem.characters(number: 9)
+      fill_in 'user[introduction]', with: Faker::Lorem.characters(number: 19)
       fill_in 'user[email]', with: 'a' + user.email # 確実にuser, other_userと違う文字列にするため
       fill_in 'user[password]', with: 'password'
       fill_in 'user[password_confirmation]', with: 'password'
@@ -20,14 +24,14 @@ describe '[STEP3] 仕上げのテスト' do
     end
     it 'ユーザログイン成功時' do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
       is_expected.to have_content 'successfully'
     end
     it 'ユーザログアウト成功時' do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
       logout_link = find_all('a')[4].native.inner_text
@@ -37,7 +41,7 @@ describe '[STEP3] 仕上げのテスト' do
     end
     it 'ユーザのプロフィール情報更新成功時' do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
       visit edit_user_path(user)
@@ -46,33 +50,34 @@ describe '[STEP3] 仕上げのテスト' do
     end
     it '投稿データの新規投稿成功時: 投稿一覧画面から行います。' do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
-      visit books_path
-      fill_in 'book[title]', with: Faker::Lorem.characters(number: 5)
-      fill_in 'book[body]', with: Faker::Lorem.characters(number: 20)
-      click_button 'Create Book'
+      visit reviews_path
+      fill_in 'review[title]', with: Faker::Lorem.characters(number: 5)
+      fill_in 'review[rate]', with: Faker::Lorem.characters(number: 5)
+      fill_in 'review[explanation]', with: Faker::Lorem.characters(number: 20)
+      click_button 'Create review'
       is_expected.to have_content 'successfully'
     end
     it '投稿データの更新成功時' do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
-      visit edit_book_path(book)
-      click_button 'Update Book'
+      visit edit_review_path(review)
+      click_button 'Update review'
       is_expected.to have_content 'successfully'
     end
   end
 
   describe '処理失敗時のテスト' do
-    context 'ユーザ新規登録失敗: nameを1文字にする' do
+    context 'ユーザ新規登録失敗: emailを1文字にする' do
       before do
         visit new_user_registration_path
-        @name = Faker::Lorem.characters(number: 1)
+        @email = Faker::Lorem.characters(number: 1)
         @email = 'a' + user.email # 確実にuser, other_userと違う文字列にするため
-        fill_in 'user[name]', with: @name
+        fill_in 'user[email]', with: @email
         fill_in 'user[email]', with: @email
         fill_in 'user[password]', with: 'password'
         fill_in 'user[password_confirmation]', with: 'password'
@@ -84,7 +89,7 @@ describe '[STEP3] 仕上げのテスト' do
       it '新規登録画面を表示しており、フォームの内容が正しい' do
         click_button 'Sign up'
         expect(page).to have_content 'Sign up'
-        expect(page).to have_field 'user[name]', with: @name
+        expect(page).to have_field 'user[email]', with: @email
         expect(page).to have_field 'user[email]', with: @email
       end
       it 'バリデーションエラーが表示される' do
@@ -93,24 +98,24 @@ describe '[STEP3] 仕上げのテスト' do
       end
     end
 
-    context 'ユーザのプロフィール情報編集失敗: nameを1文字にする' do
+    context 'ユーザのプロフィール情報編集失敗: emailを1文字にする' do
       before do
-        @user_old_name = user.name
-        @name = Faker::Lorem.characters(number: 1)
+        @user_old_email = user.email
+        @email = Faker::Lorem.characters(number: 1)
         visit new_user_session_path
-        fill_in 'user[name]', with: @user_old_name
+        fill_in 'user[email]', with: @user_old_email
         fill_in 'user[password]', with: user.password
         click_button 'Log in'
         visit edit_user_path(user)
-        fill_in 'user[name]', with: @name
+        fill_in 'user[email]', with: @email
         click_button 'Update User'
       end
 
       it '更新されない' do
-        expect(user.reload.name).to eq @user_old_name
+        expect(user.reload.email).to eq @user_old_email
       end
       it 'ユーザ編集画面を表示しており、フォームの内容が正しい' do
-        expect(page).to have_field 'user[name]', with: @name
+        expect(page).to have_field 'user[email]', with: @email
       end
       it 'バリデーションエラーが表示される' do
         expect(page).to have_content "is too short (minimum is 2 characters)"
@@ -120,29 +125,29 @@ describe '[STEP3] 仕上げのテスト' do
     context '投稿データの新規投稿失敗: 投稿一覧画面から行い、titleを空にする' do
       before do
         visit new_user_session_path
-        fill_in 'user[name]', with: user.name
+        fill_in 'user[email]', with: user.email
         fill_in 'user[password]', with: user.password
         click_button 'Log in'
-        visit books_path
-        @body = Faker::Lorem.characters(number: 19)
-        fill_in 'book[body]', with: @body
+        visit reviews_path
+        @explanation = Faker::Lorem.characters(number: 19)
+        fill_in 'review[explanation]', with: @explanation
       end
 
       it '投稿が保存されない' do
-        expect { click_button 'Create Book' }.not_to change(Book.all, :count)
+        expect { click_button 'Create review' }.not_to change(review.all, :count)
       end
       it '投稿一覧画面を表示している' do
-        click_button 'Create Book'
-        expect(current_path).to eq '/books'
-        expect(page).to have_content book.body
-        expect(page).to have_content other_book.body
+        click_button 'Create review'
+        expect(current_path).to eq '/reviews'
+        expect(page).to have_content review.explanation
+        expect(page).to have_content other_review.explanation
       end
       it '新規投稿フォームの内容が正しい' do
-        expect(find_field('book[title]').text).to be_blank
-        expect(page).to have_field 'book[body]', with: @body
+        expect(find_field('review[title]').text).to be_blank
+        expect(page).to have_field 'review[explanation]', with: @explanation
       end
       it 'バリデーションエラーが表示される' do
-        click_button 'Create Book'
+        click_button 'Create review'
         expect(page).to have_content "can't be blank"
       end
     end
@@ -150,22 +155,22 @@ describe '[STEP3] 仕上げのテスト' do
     context '投稿データの更新失敗: titleを空にする' do
       before do
         visit new_user_session_path
-        fill_in 'user[name]', with: user.name
+        fill_in 'user[email]', with: user.email
         fill_in 'user[password]', with: user.password
         click_button 'Log in'
-        visit edit_book_path(book)
-        @book_old_title = book.title
-        fill_in 'book[title]', with: ''
-        click_button 'Update Book'
+        visit edit_review_path(review)
+        @review_old_title = review.title
+        fill_in 'review[title]', with: ''
+        click_button 'Update review'
       end
 
       it '投稿が更新されない' do
-        expect(book.reload.title).to eq @book_old_title
+        expect(review.reload.title).to eq @review_old_title
       end
       it '投稿編集画面を表示しており、フォームの内容が正しい' do
-        expect(current_path).to eq '/books/' + book.id.to_s
-        expect(find_field('book[title]').text).to be_blank
-        expect(page).to have_field 'book[body]', with: book.body
+        expect(current_path).to eq '/reviews/' + review.id.to_s
+        expect(find_field('review[title]').text).to be_blank
+        expect(page).to have_field 'review[explanation]', with: review.explanation
       end
       it 'エラーメッセージが表示される' do
         expect(page).to have_content 'error'
@@ -189,15 +194,15 @@ describe '[STEP3] 仕上げのテスト' do
       is_expected.to eq '/users/sign_in'
     end
     it '投稿一覧画面' do
-      visit books_path
+      visit reviews_path
       is_expected.to eq '/users/sign_in'
     end
     it '投稿詳細画面' do
-      visit book_path(book)
+      visit review_path(review)
       is_expected.to eq '/users/sign_in'
     end
     it '投稿編集画面' do
-      visit edit_book_path(book)
+      visit edit_review_path(review)
       is_expected.to eq '/users/sign_in'
     end
   end
@@ -205,31 +210,31 @@ describe '[STEP3] 仕上げのテスト' do
   describe '他人の画面のテスト' do
     before do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
     end
 
     describe '他人の投稿詳細画面のテスト' do
       before do
-        visit book_path(other_book)
+        visit review_path(other_review)
       end
 
       context '表示内容の確認' do
         it 'URLが正しい' do
-          expect(current_path).to eq '/books/' + other_book.id.to_s
+          expect(current_path).to eq '/reviews/' + other_review.id.to_s
         end
-        it '「Book detail」と表示される' do
-          expect(page).to have_content 'Book detail'
+        it '「review detail」と表示される' do
+          expect(page).to have_content 'review detail'
         end
         it 'ユーザ画像・名前のリンク先が正しい' do
-          expect(page).to have_link other_book.user.name, href: user_path(other_book.user)
+          expect(page).to have_link other_review.user.email, href: user_path(other_review.user)
         end
         it '投稿のtitleが表示される' do
-          expect(page).to have_content other_book.title
+          expect(page).to have_content other_review.title
         end
         it '投稿のopinionが表示される' do
-          expect(page).to have_content other_book.body
+          expect(page).to have_content other_review.explanation
         end
         it '投稿の編集リンクが表示されない' do
           expect(page).not_to have_link 'Edit'
@@ -241,14 +246,14 @@ describe '[STEP3] 仕上げのテスト' do
 
       context 'サイドバーの確認' do
         it '他人の名前と紹介文が表示される' do
-          expect(page).to have_content other_user.name
+          expect(page).to have_content other_user.email
           expect(page).to have_content other_user.introduction
         end
         it '他人のユーザ編集画面へのリンクが存在する' do
           expect(page).to have_link '', href: edit_user_path(other_user)
         end
         it '自分の名前と紹介文は表示されない' do
-          expect(page).not_to have_content user.name
+          expect(page).not_to have_content user.email
           expect(page).not_to have_content user.introduction
         end
         it '自分のユーザ編集画面へのリンクは存在しない' do
@@ -259,8 +264,8 @@ describe '[STEP3] 仕上げのテスト' do
 
     context '他人の投稿編集画面' do
       it '遷移できず、投稿一覧画面にリダイレクトされる' do
-        visit edit_book_path(other_book)
-        expect(current_path).to eq '/books'
+        visit edit_review_path(other_review)
+        expect(current_path).to eq '/reviews'
       end
     end
 
@@ -277,27 +282,27 @@ describe '[STEP3] 仕上げのテスト' do
           expect(page).to have_link '', href: user_path(other_user)
         end
         it '投稿一覧に他人の投稿のtitleが表示され、リンクが正しい' do
-          expect(page).to have_link other_book.title, href: book_path(other_book)
+          expect(page).to have_link other_review.title, href: review_path(other_review)
         end
         it '投稿一覧に他人の投稿のopinionが表示される' do
-          expect(page).to have_content other_book.body
+          expect(page).to have_content other_review.explanation
         end
         it '自分の投稿は表示されない' do
-          expect(page).not_to have_content book.title
-          expect(page).not_to have_content book.body
+          expect(page).not_to have_content review.title
+          expect(page).not_to have_content review.explanation
         end
       end
 
       context 'サイドバーの確認' do
         it '他人の名前と紹介文が表示される' do
-          expect(page).to have_content other_user.name
+          expect(page).to have_content other_user.email
           expect(page).to have_content other_user.introduction
         end
         it '他人のユーザ編集画面へのリンクが存在する' do
           expect(page).to have_link '', href: edit_user_path(other_user)
         end
         it '自分の名前と紹介文は表示されない' do
-          expect(page).not_to have_content user.name
+          expect(page).not_to have_content user.email
           expect(page).not_to have_content user.introduction
         end
         it '自分のユーザ編集画面へのリンクは存在しない' do
@@ -319,7 +324,7 @@ describe '[STEP3] 仕上げのテスト' do
 
     before do
       visit new_user_session_path
-      fill_in 'user[name]', with: user.name
+      fill_in 'user[email]', with: user.email
       fill_in 'user[password]', with: user.password
       click_button 'Log in'
     end
@@ -335,12 +340,12 @@ describe '[STEP3] 仕上げのテスト' do
       is_expected.to have_selector '.container .row .col-md-8.offset-md-1'
     end
     it '投稿一覧画面' do
-      visit books_path
+      visit reviews_path
       is_expected.to have_selector '.container .row .col-md-3'
       is_expected.to have_selector '.container .row .col-md-8.offset-md-1'
     end
     it '投稿詳細画面' do
-      visit book_path(book)
+      visit review_path(review)
       is_expected.to have_selector '.container .row .col-md-3'
       is_expected.to have_selector '.container .row .col-md-8.offset-md-1'
     end
@@ -355,7 +360,7 @@ describe '[STEP3] 仕上げのテスト' do
       end
 
       it '本のアイコンが表示される' do
-        is_expected.to have_selector '.fas.fa-book'
+        is_expected.to have_selector '.fas.fa-review'
       end
     end
 
@@ -367,7 +372,7 @@ describe '[STEP3] 仕上げのテスト' do
       end
 
       it '本のアイコンが表示される' do
-        is_expected.to have_selector '.fas.fa-book'
+        is_expected.to have_selector '.fas.fa-review'
       end
     end
 
@@ -397,7 +402,7 @@ describe '[STEP3] 仕上げのテスト' do
 
       before do
         visit new_user_session_path
-        fill_in 'user[name]', with: user.name
+        fill_in 'user[email]', with: user.email
         fill_in 'user[password]', with: user.password
         click_button 'Log in'
       end
@@ -408,8 +413,8 @@ describe '[STEP3] 仕上げのテスト' do
       it 'Usersリンクのアイコンが表示される' do
         is_expected.to have_selector '.fas.fa-users'
       end
-      it 'Booksリンクのアイコンが表示される' do
-        is_expected.to have_selector '.fas.fa-book-open'
+      it 'reviewsリンクのアイコンが表示される' do
+        is_expected.to have_selector '.fas.fa-review-open'
       end
       it 'log outリンクのアイコンが表示される' do
         is_expected.to have_selector '.fas.fa-sign-out-alt'
@@ -421,7 +426,7 @@ describe '[STEP3] 仕上げのテスト' do
 
       before do
         visit new_user_session_path
-        fill_in 'user[name]', with: user.name
+        fill_in 'user[email]', with: user.email
         fill_in 'user[password]', with: user.password
         click_button 'Log in'
       end
@@ -435,11 +440,11 @@ describe '[STEP3] 仕上げのテスト' do
         is_expected.to have_selector '.fas.fa-user-cog'
       end
       it '投稿一覧画面でレンチアイコンが表示される' do
-        visit books_path
+        visit reviews_path
         is_expected.to have_selector '.fas.fa-user-cog'
       end
       it '投稿詳細画面でレンチアイコンが表示される' do
-        visit book_path(book)
+        visit review_path(review)
         is_expected.to have_selector '.fas.fa-user-cog'
       end
     end

@@ -1,182 +1,115 @@
 require 'rails_helper'
 
-describe '[STEP2] ユーザログイン後のテスト' do
-  let(:user) { create(:user) }
-  let!(:other_user) { create(:user) }
-  let!(:book) { create(:book, user: user) }
-  let!(:other_book) { create(:book, user: other_user) }
+describe '[STEP2] 管理者ログイン後のテスト' do
+  let(:admin) { create(:admin) }
+  let!(:other_admin) { create(:admin) }
+  let!(:genre) { create(:genre, admin: admin) }
+  let!(:other_genre) { create(:genre, admin: other_admin) }
 
   before do
-    visit new_user_session_path
-    fill_in 'user[name]', with: user.name
-    fill_in 'user[password]', with: user.password
-    click_button 'Log in'
+    visit new_admin_session_path
+    fill_in 'admin[email]', with: admin.email
+    fill_in 'admin[password]', with: admin.password
+    click_button 'ログイン'
   end
 
   describe 'ヘッダーのテスト: ログインしている場合' do
-    context 'リンクの内容を確認: ※logoutは『ユーザログアウトのテスト』でテスト済みになります。' do
+    context 'リンクの内容を確認: ※logoutは『管理者ログアウトのテスト』でテスト済みになります。' do
       subject { current_path }
 
-      it 'Homeを押すと、自分のユーザ詳細画面に遷移する' do
-        home_link = find_all('a')[1].native.inner_text
-        home_link = home_link.gsub(/\n/, '').gsub(/\A\s*/, '').gsub(/\s*\Z/, '')
-        click_link home_link
-        is_expected.to eq '/users/' + user.id.to_s
+      it 'マイページを押すと、自分の管理者詳細画面に遷移する' do
+        admin_link = find_all('a')[1].native.inner_text
+        admin_link = admin_link.gsub(/\n/, '').gsub(/\A\s*/, '').gsub(/\s*\Z/, '')
+        click_link admin_link
+        is_expected.to eq '/genres/' + admin.id.to_s
       end
-      it 'Usersを押すと、ユーザ一覧画面に遷移する' do
-        users_link = find_all('a')[2].native.inner_text
-        users_link = users_link.gsub(/\n/, '').gsub(/\A\s*/, '').gsub(/\s*\Z/, '')
-        click_link users_link
-        is_expected.to eq '/users'
-      end
-      it 'Booksを押すと、投稿一覧画面に遷移する' do
-        books_link = find_all('a')[3].native.inner_text
-        books_link = books_link.gsub(/\n/, '').gsub(/\A\s*/, '').gsub(/\s*\Z/, '')
-        click_link books_link
-        is_expected.to eq '/books'
+      it '求人一覧を押すと、求人一覧画面に遷移する' do
+        genres_link = find_all('a')[2].native.inner_text
+        genres_link = genres_link.gsub(/\n/, '').gsub(/\A\s*/, '').gsub(/\s*\Z/, '')
+        click_link genres_link
+        is_expected.to eq '/genres'
       end
     end
   end
 
-  describe '投稿一覧画面のテスト' do
+  describe '求人一覧画面のテスト' do
     before do
-      visit books_path
+      visit admins_genres_path
     end
 
     context '表示内容の確認' do
       it 'URLが正しい' do
-        expect(current_path).to eq '/books'
+        expect(current_path).to eq 'admins/genres/'
       end
-      it '自分と他人の画像のリンク先が正しい' do
-        expect(page).to have_link '', href: user_path(book.user)
-        expect(page).to have_link '', href: user_path(other_book.user)
-      end
-      it '自分の投稿と他人の投稿のタイトルのリンク先がそれぞれ正しい' do
-        expect(page).to have_link book.title, href: book_path(book)
-        expect(page).to have_link other_book.title, href: book_path(other_book)
-      end
-      it '自分の投稿と他人の投稿のオピニオンが表示される' do
-        expect(page).to have_content book.body
-        expect(page).to have_content other_book.body
+
+      it '自分の投稿と他人の投稿が表示される' do
+        expect(page).to have_content genre
+        expect(page).to have_content other_genre
       end
     end
 
-    context 'サイドバーの確認' do
-      it '自分の名前と紹介文が表示される' do
-        expect(page).to have_content user.name
-        expect(page).to have_content user.introduction
-      end
-      it '自分のユーザ編集画面へのリンクが存在する' do
-        expect(page).to have_link '', href: edit_user_path(user)
-      end
-      it '「New book」と表示される' do
-        expect(page).to have_content 'New book'
-      end
-      it 'titleフォームが表示される' do
-        expect(page).to have_field 'book[title]'
-      end
-      it 'titleフォームに値が入っていない' do
-        expect(find_field('book[title]').text).to be_blank
-      end
-      it 'opinionフォームが表示される' do
-        expect(page).to have_field 'book[body]'
-      end
-      it 'opinionフォームに値が入っていない' do
-        expect(find_field('book[body]').text).to be_blank
-      end
-      it 'Create Bookボタンが表示される' do
-        expect(page).to have_button 'Create Book'
-      end
-    end
-
-    context '投稿成功のテスト' do
+    context '求人投稿成功のテスト' do
       before do
-        fill_in 'book[title]', with: Faker::Lorem.characters(number: 5)
-        fill_in 'book[body]', with: Faker::Lorem.characters(number: 20)
+        fill_in 'genre[title]', with: Faker::Lorem.characters(number: 5)
+        fill_in 'genre[reward]', with: Faker::Lorem.characters(number: 20)
+        fill_in 'genre[explanation]', with: Faker::Lorem.characters(number: 20)
       end
 
       it '自分の新しい投稿が正しく保存される' do
-        expect { click_button 'Create Book' }.to change(user.books, :count).by(1)
+        expect { click_button '投稿' }.to change(admin.genres, :count).by(1)
       end
       it 'リダイレクト先が、保存できた投稿の詳細画面になっている' do
-        click_button 'Create Book'
-        expect(current_path).to eq '/books/' + Book.last.id.to_s
+        click_button '投稿'
+        expect(current_path).to eq '/genres/' + genre.last.id.to_s
       end
     end
   end
 
-  describe '自分の投稿詳細画面のテスト' do
+  describe '自分の求人投稿詳細画面のテスト' do
     before do
-      visit book_path(book)
+      visit admins_genre_path(@genre)
     end
 
     context '表示内容の確認' do
       it 'URLが正しい' do
-        expect(current_path).to eq '/books/' + book.id.to_s
+        expect(current_path).to eq '/genres/' + genres.id.to_s
       end
-      it '「Book detail」と表示される' do
-        expect(page).to have_content 'Book detail'
-      end
-      it 'ユーザ画像・名前のリンク先が正しい' do
-        expect(page).to have_link book.user.name, href: user_path(book.user)
+      it '「genre detail」と表示される' do
+        expect(page).to have_content 'genre detail'
       end
       it '投稿のtitleが表示される' do
-        expect(page).to have_content book.title
+        expect(page).to have_content genre.title
+      end
+      it '投稿のrewardが表示される' do
+        expect(page).to have_content genre.reward
       end
       it '投稿のopinionが表示される' do
-        expect(page).to have_content book.body
+        expect(page).to have_content genre.explanation
       end
       it '投稿の編集リンクが表示される' do
-        expect(page).to have_link 'Edit', href: edit_book_path(book)
+        expect(page).to have_link 'Edit', href: edit_admins_genre_path(@genre)
       end
       it '投稿の削除リンクが表示される' do
-        expect(page).to have_link 'Destroy', href: book_path(book)
-      end
-    end
-
-    context 'サイドバーの確認' do
-      it '自分の名前と紹介文が表示される' do
-        expect(page).to have_content user.name
-        expect(page).to have_content user.introduction
-      end
-      it '自分のユーザ編集画面へのリンクが存在する' do
-        expect(page).to have_link '', href: edit_user_path(user)
-      end
-      it '「New book」と表示される' do
-        expect(page).to have_content 'New book'
-      end
-      it 'titleフォームが表示される' do
-        expect(page).to have_field 'book[title]'
-      end
-      it 'titleフォームに値が入っていない' do
-        expect(find_field('book[title]').text).to be_blank
-      end
-      it 'opinionフォームが表示される' do
-        expect(page).to have_field 'book[body]'
-      end
-      it 'opinionフォームに値が入っていない' do
-        expect(find_field('book[body]').text).to be_blank
-      end
-      it 'Create Bookボタンが表示される' do
-        expect(page).to have_button 'Create Book'
+        expect(page).to have_link 'Destroy', href: admins_genre_path(@genre)
       end
     end
 
     context '投稿成功のテスト' do
       before do
-        fill_in 'book[title]', with: Faker::Lorem.characters(number: 5)
-        fill_in 'book[body]', with: Faker::Lorem.characters(number: 20)
+        fill_in 'genre[title]', with: Faker::Lorem.characters(number: 5)
+        fill_in 'genre[reward]', with: Faker::Lorem.characters(number: 20)
+        fill_in 'genre[explanation]', with: Faker::Lorem.characters(number: 20)
       end
 
       it '自分の新しい投稿が正しく保存される' do
-        expect { click_button 'Create Book' }.to change(user.books, :count).by(1)
+        expect { click_button '投稿' }.to change(admin.genres, :count).by(1)
       end
     end
 
     context '編集リンクのテスト' do
       it '編集画面に遷移する' do
         click_link 'Edit'
-        expect(current_path).to eq '/books/' + book.id.to_s + '/edit'
+        expect(current_path).to eq '/genres/' + genre.id.to_s + '/edit'
       end
     end
 
@@ -186,210 +119,160 @@ describe '[STEP2] ユーザログイン後のテスト' do
       end
 
       it '正しく削除される' do
-        expect(Book.where(id: book.id).count).to eq 0
+        expect(genre.where(id: genre.id).count).to eq 0
       end
       it 'リダイレクト先が、投稿一覧画面になっている' do
-        expect(current_path).to eq '/books'
+        expect(current_path).to eq 'admins/genres/'
       end
     end
   end
 
   describe '自分の投稿編集画面のテスト' do
     before do
-      visit edit_book_path(book)
+      visit edit_admins_genre_path(@genre)
     end
 
     context '表示の確認' do
       it 'URLが正しい' do
-        expect(current_path).to eq '/books/' + book.id.to_s + '/edit'
+        expect(current_path).to eq '/genres/' + genre.id.to_s + '/edit'
       end
-      it '「Editing Book」と表示される' do
-        expect(page).to have_content 'Editing Book'
+      it '「Editing genre」と表示される' do
+        expect(page).to have_content 'Editing genre'
       end
       it 'title編集フォームが表示される' do
-        expect(page).to have_field 'book[title]', with: book.title
+        expect(page).to have_field 'genre[title]', with: genre.title
       end
-      it 'opinion編集フォームが表示される' do
-        expect(page).to have_field 'book[body]', with: book.body
+      it 'reward編集フォームが表示される' do
+        expect(page).to have_field 'genre[reward]', with: genre.reward
       end
-      it 'Update Bookボタンが表示される' do
-        expect(page).to have_button 'Update Book'
+      it 'explanation編集フォームが表示される' do
+        expect(page).to have_field 'genre[explanation]', with: genre.explanation
       end
-      it 'Showリンクが表示される' do
-        expect(page).to have_link 'Show', href: book_path(book)
-      end
-      it 'Backリンクが表示される' do
-        expect(page).to have_link 'Back', href: books_path
+      it 'Update genreボタンが表示される' do
+        expect(page).to have_button 'Update genre'
       end
     end
 
     context '編集成功のテスト' do
       before do
-        @book_old_title = book.title
-        @book_old_body = book.body
-        fill_in 'book[title]', with: Faker::Lorem.characters(number: 4)
-        fill_in 'book[body]', with: Faker::Lorem.characters(number: 19)
-        click_button 'Update Book'
+        @genre_old_title = genre.title
+        @genre_old_reward = genre.reward
+        @genre_old_explanation = genre.explanation
+        fill_in 'genre[title]', with: Faker::Lorem.characters(number: 4)
+        fill_in 'genre[reward]', with: Faker::Lorem.characters(number: 4)
+        fill_in 'genre[explanation]', with: Faker::Lorem.characters(number: 19)
+        click_button 'Update genre'
       end
 
       it 'titleが正しく更新される' do
-        expect(book.reload.title).not_to eq @book_old_title
+        expect(genre.reload.title).not_to eq @genre_old_title
       end
-      it 'bodyが正しく更新される' do
-        expect(book.reload.body).not_to eq @book_old_body
+      it 'rewardが正しく更新される' do
+        expect(genre.reload.reward).not_to eq @genre_old_reward
+      end
+      it 'explanationが正しく更新される' do
+        expect(genre.reload.explanation).not_to eq @genre_old_explanation
       end
       it 'リダイレクト先が、更新した投稿の詳細画面になっている' do
-        expect(current_path).to eq '/books/' + book.id.to_s
-        expect(page).to have_content 'Book detail'
+        expect(current_path).to eq '/genres/' + genre.id.to_s
+        expect(page).to have_content 'genre detail'
       end
     end
   end
 
-  describe 'ユーザ一覧画面のテスト' do
+  describe '求人一覧画面のテスト' do
     before do
-      visit users_path
+      visit admins_genres_path
     end
 
     context '表示内容の確認' do
       it 'URLが正しい' do
-        expect(current_path).to eq '/users'
+        expect(current_path).to eq '/admins/genres/'
       end
-      it '自分と他人の画像が表示される: fallbackの画像がサイドバーの1つ＋一覧(2人)の2つの計3つ存在する' do
-        expect(all('img').size).to eq(3)
-      end
-      it '自分と他人の名前がそれぞれ表示される' do
-        expect(page).to have_content user.name
-        expect(page).to have_content other_user.name
-      end
-      it '自分と他人のshowリンクがそれぞれ表示される' do
-        expect(page).to have_link 'Show', href: user_path(user)
-        expect(page).to have_link 'Show', href: user_path(other_user)
-      end
-    end
 
-    context 'サイドバーの確認' do
-      it '自分の名前と紹介文が表示される' do
-        expect(page).to have_content user.name
-        expect(page).to have_content user.introduction
-      end
-      it '自分のユーザ編集画面へのリンクが存在する' do
-        expect(page).to have_link '', href: edit_user_path(user)
-      end
-      it '「New book」と表示される' do
-        expect(page).to have_content 'New book'
-      end
-      it 'titleフォームが表示される' do
-        expect(page).to have_field 'book[title]'
-      end
-      it 'titleフォームに値が入っていない' do
-        expect(find_field('book[title]').text).to be_blank
-      end
-      it 'opinionフォームが表示される' do
-        expect(page).to have_field 'book[body]'
-      end
-      it 'opinionフォームに値が入っていない' do
-        expect(find_field('book[body]').text).to be_blank
-      end
-      it 'Create Bookボタンが表示される' do
-        expect(page).to have_button 'Create Book'
+      it '求人のshowリンクがそれぞれ表示される' do
+        expect(page).to have_link 'Show', href: genre_path(genre)
+        expect(page).to have_link 'Show', href: genre_path(other_genre)
       end
     end
   end
 
-  describe '自分のユーザ詳細画面のテスト' do
+  describe '自分の管理者詳細画面のテスト' do
     before do
-      visit user_path(user)
+      visit admin_path(admin)
     end
 
     context '表示の確認' do
       it 'URLが正しい' do
-        expect(current_path).to eq '/users/' + user.id.to_s
-      end
-      it '投稿一覧のユーザ画像のリンク先が正しい' do
-        expect(page).to have_link '', href: user_path(user)
-      end
-      it '投稿一覧に自分の投稿のtitleが表示され、リンクが正しい' do
-        expect(page).to have_link book.title, href: book_path(book)
-      end
-      it '投稿一覧に自分の投稿のopinionが表示される' do
-        expect(page).to have_content book.body
-      end
-      it '他人の投稿は表示されない' do
-        expect(page).not_to have_link '', href: user_path(other_user)
-        expect(page).not_to have_content other_book.title
-        expect(page).not_to have_content other_book.body
-      end
-    end
-
-    context 'サイドバーの確認' do
-      it '自分の名前と紹介文が表示される' do
-        expect(page).to have_content user.name
-        expect(page).to have_content user.introduction
-      end
-      it '自分のユーザ編集画面へのリンクが存在する' do
-        expect(page).to have_link '', href: edit_user_path(user)
-      end
-      it '「New book」と表示される' do
-        expect(page).to have_content 'New book'
-      end
-      it 'titleフォームが表示される' do
-        expect(page).to have_field 'book[title]'
-      end
-      it 'titleフォームに値が入っていない' do
-        expect(find_field('book[title]').text).to be_blank
-      end
-      it 'opinionフォームが表示される' do
-        expect(page).to have_field 'book[body]'
-      end
-      it 'opinionフォームに値が入っていない' do
-        expect(find_field('book[body]').text).to be_blank
-      end
-      it 'Create Bookボタンが表示される' do
-        expect(page).to have_button 'Create Book'
+        expect(current_path).to eq '/admins/' + admin.id.to_s
       end
     end
   end
 
-  describe '自分のユーザ情報編集画面のテスト' do
+  describe '自分の管理者情報編集画面のテスト' do
     before do
-      visit edit_user_path(user)
+      visit edit_admin_path(@admin)
     end
 
     context '表示の確認' do
       it 'URLが正しい' do
-        expect(current_path).to eq '/users/' + user.id.to_s + '/edit'
+        expect(current_path).to eq '/admins/' + admin.id.to_s + '/edit'
       end
-      it '名前編集フォームに自分の名前が表示される' do
-        expect(page).to have_field 'user[name]', with: user.name
+      it '姓編集フォームに自分の名前が表示される' do
+        expect(page).to have_field 'admin[first_name]', with: admin.first_name
+      end
+      it '名編集フォームに自分の名前が表示される' do
+        expect(page).to have_field 'admin[last_name]', with: admin.last_name
+      end
+      it '姓カナ編集フォームに自分の名前が表示される' do
+        expect(page).to have_field 'admin[kana_first_name]', with: kana_first_name
+      end
+      it '名カナ編集フォームに自分の名前が表示される' do
+        expect(page).to have_field 'admin[kana_last_name]', with: kana_last_name
       end
       it '画像編集フォームが表示される' do
-        expect(page).to have_field 'user[profile_image]'
+        expect(page).to have_field 'admin[image]'
       end
       it '自己紹介編集フォームに自分の自己紹介文が表示される' do
-        expect(page).to have_field 'user[introduction]', with: user.introduction
+        expect(page).to have_field 'admin[introduction]', with: admin.introduction
       end
-      it 'Update Userボタンが表示される' do
-        expect(page).to have_button 'Update User'
+      it 'Update adminボタンが表示される' do
+        expect(page).to have_button 'Update admin'
       end
     end
 
     context '更新成功のテスト' do
       before do
-        @user_old_name = user.name
-        @user_old_intrpduction = user.introduction
-        fill_in 'user[name]', with: Faker::Lorem.characters(number: 9)
-        fill_in 'user[introduction]', with: Faker::Lorem.characters(number: 19)
-        click_button 'Update User'
+        @admin_old_first_name = admin.first_name
+        @admin_old_last_name = admin.last_name
+        @admin_old_kana_first_name = admin.kana_first_name
+        @admin_old_kana_last_name = admin.kana_last_name
+        @admin_old_introduction = admin.introduction
+        fill_in 'admin[first_name]', with: Faker::Lorem.characters(number: 9)
+        fill_in 'admin[last_name]', with: Faker::Lorem.characters(number: 9)
+        fill_in 'admin[kana_first_name]', with: Faker::Lorem.characters(number: 9)
+        fill_in 'admin[kana_last_name]', with: Faker::Lorem.characters(number: 9)
+        fill_in 'admin[introduction]', with: Faker::Lorem.characters(number: 19)
+        click_button 'Update admin'
       end
 
-      it 'nameが正しく更新される' do
-        expect(user.reload.name).not_to eq @user_old_name
+      it 'first_nameが正しく更新される' do
+        expect(admin.reload.name).not_to eq @admin_old_first_name
+      end
+      it 'last_nameが正しく更新される' do
+        expect(admin.reload.name).not_to eq @admin_old_last_name
+      end
+      it 'kana_first_nameが正しく更新される' do
+        expect(admin.reload.name).not_to eq @admin_old_kana_first_name
+      end
+      it 'kana_last_nameが正しく更新される' do
+        expect(admin.reload.name).not_to eq @admin_old_kana_last_name
       end
       it 'introductionが正しく更新される' do
-        expect(user.reload.introduction).not_to eq @user_old_intrpduction
+        expect(admin.reload.introduction).not_to eq @admin_old_intrpduction
       end
-      it 'リダイレクト先が、自分のユーザ詳細画面になっている' do
-        expect(current_path).to eq '/users/' + user.id.to_s
+      it 'リダイレクト先が、自分の管理者詳細画面になっている' do
+        expect(current_path).to eq '/admins/' + admin.id.to_s
       end
     end
   end
